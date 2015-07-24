@@ -1,3 +1,11 @@
+;This configuration file defines the relatinship between REDCap hook types, PHP
+;files containing hook implementations, hook implementation functions, and
+;REDCap projects which use the given implementation.
+
+;The format for defining this relationship is as follows:
+;[redcap_hook_function]
+;redcap/root/relative/path/to/hook/file.php= hook_implementation:<pid>,<pid>...
+
 ;This is an example only.
-[redcap_save_record]
-hooks/projects/example.php= example_save_record
+;[redcap_save_record]
+;hooks/projects/example.php= example_save_record:1,2

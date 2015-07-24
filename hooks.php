@@ -48,7 +48,7 @@ class HooksConfig implements ArrayAccess {
  * Config Example:
  *
  * [redcap_hook_function]
- * redcap/root/relative/path/to/hook/file.php= name_of_hook_function
+ * redcap/root/relative/path/to/hook/file.php= name_of_hook_function:<pid>,<pid>
  *
  * It is recommended that hook implementations that are project specific be
  * placed in a file named for the project and placed in 
@@ -78,9 +78,16 @@ class REDCapHookRegistry {
     public function redcap_data_entry_form($project_id, $record, $instrument,
                                            $event_id, $group_id)
     {
-        foreach($this->CONFIG['redcap_data_entry_form'] as $file => $function) {
-            require_once($file);
-            $function($project_id, $record, $instrument, $event_id);
+        foreach($this->CONFIG['redcap_data_entry_form'] as $file => $params) {
+            list($function, $project_ids) = explode(':', $params);
+            if(in_array($project_id, explode(',', $project_ids))) {
+                if(is_readable($file)) {
+                    require_once($file);
+                    $function($project_id, $record, $instrument, $event_id);
+                }
+            } /* else {
+                ... we should handle this case!
+            } */
         }
     }
 
@@ -88,11 +95,14 @@ class REDCapHookRegistry {
                                        $event_id, $group_id, $survey_hash,
                                        $response_id)
     {
-        foreach($this->CONFIG['redcap_save_record'] as $file => $function) {
-            if(is_readable($file)) {
-                require_once($file);
-                $function($project_id, $record, $instrument, $event_id,
-                    $group_id, $survey_hash, $response_id);
+        foreach($this->CONFIG['redcap_save_record'] as $file => $params) {
+            list($function, $project_ids) = explode(':', $params);
+            if(in_array($project_id, explode(',', $project_ids))) {
+                if(is_readable($file)) {
+                    require_once($file);
+                    $function($project_id, $record, $instrument, $event_id,
+                              $group_id, $survey_hash, $response_id);
+                }
             } /* else {
                 ... we should handle this case!
             } */
