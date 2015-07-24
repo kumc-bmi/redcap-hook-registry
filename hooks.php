@@ -24,7 +24,7 @@ class HooksConfig implements ArrayAccess {
     }
 
     public function offsetExists($offset) {
-        return isset($this->container[$offest]);
+        return isset($this->container[$offset]);
     }
 
     public function offsetUnset($offset) {
