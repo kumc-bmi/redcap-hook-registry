@@ -1,5 +1,16 @@
 <?php
-define('HOOKS_CONFIG', 'hooks/hooks.ini');
+/**
+ * This is to deal with PHP relative path issues resulting from differences in
+ * where a script is executed from.  NOTE: There has to be a better to deal with
+ * this.
+ */
+if(defined('APP_PATH_DOCROOT')) { // Executed by REDCap process.
+    define('REDCAP_ROOT', realpath(APP_PATH_DOCROOT.'../').'/');
+    define('HOOKS_CONFIG', realpath(APP_PATH_DOCROOT.'../hooks/hooks.ini'));
+} else { // For testing from REDCap root directory.
+    define('REDCAP_ROOT', '');
+    define('HOOKS_CONFIG', 'hooks/hooks.ini');
+}
 
 /**
  * An object for storing REDCapHookRegistry configuration values. The
@@ -81,8 +92,8 @@ class REDCapHookRegistry {
         foreach($this->CONFIG['redcap_data_entry_form'] as $file => $params) {
             list($function, $project_ids) = explode(':', $params);
             if(in_array($project_id, explode(',', $project_ids))) {
-                if(is_readable($file)) {
-                    require_once($file);
+                if(is_readable(REDCAP_ROOT.$file)) {
+                    require_once(REDCAP_ROOT.$file);
                     $function($project_id, $record, $instrument, $event_id);
                 }
             } /* else {
@@ -98,8 +109,8 @@ class REDCapHookRegistry {
         foreach($this->CONFIG['redcap_save_record'] as $file => $params) {
             list($function, $project_ids) = explode(':', $params);
             if(in_array($project_id, explode(',', $project_ids))) {
-                if(is_readable($file)) {
-                    require_once($file);
+                if(is_readable(REDCAP_ROOT.$file)) {
+                    require_once(REDCAP_ROOT.$file);
                     $function($project_id, $record, $instrument, $event_id,
                               $group_id, $survey_hash, $response_id);
                 }
