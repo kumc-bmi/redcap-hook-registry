@@ -82,47 +82,25 @@ class REDCapHookRegistry {
 
     private $CONFIG;
 
-    public function __construct($CONFIG) {
-        $this->CONFIG = $CONFIG;
+    public function __construct($config_path) {
+        $this->CONFIG = new HooksConfig($config_path);
     }
 
-    public function redcap_data_entry_form($project_id, $record, $instrument,
-                                           $event_id, $group_id)
-    {
-        foreach($this->CONFIG['redcap_data_entry_form'] as $file => $params) {
-            list($function, $project_ids) = explode(':', $params);
+    public function process_hook($hook, $project_id, $params) {
+        foreach($this->CONFIG[$hook] as $file => $target) {
+            list($function, $project_ids) = explode(':', $target);
             if(in_array($project_id, explode(',', $project_ids))) {
                 if(is_readable(REDCAP_ROOT.$file)) {
                     require_once(REDCAP_ROOT.$file);
-                    $function($project_id, $record, $instrument, $event_id);
-                }
+                    call_user_func_array($function, $params);
+                } /* else {
+                    ... this case should be handled!
+                } */
             } /* else {
-                ... we should handle this case!
+                ... this one too!
             } */
         }
     }
-
-    public function redcap_save_record($project_id, $record, $instrument,
-                                       $event_id, $group_id, $survey_hash,
-                                       $response_id)
-    {
-        foreach($this->CONFIG['redcap_save_record'] as $file => $params) {
-            list($function, $project_ids) = explode(':', $params);
-            if(in_array($project_id, explode(',', $project_ids))) {
-                if(is_readable(REDCAP_ROOT.$file)) {
-                    require_once(REDCAP_ROOT.$file);
-                    $function($project_id, $record, $instrument, $event_id,
-                              $group_id, $survey_hash, $response_id);
-                }
-            } /* else {
-                ... we should handle this case!
-            } */
-        }
-    }
-
-    /**
-     * TODO: Implement remaining REDCap hook functions
-     */
 }
 
 /**
@@ -131,25 +109,19 @@ class REDCapHookRegistry {
 function redcap_data_entry_form($project_id, $record, $instrument, $event_id,
                                 $group_id)
 {
-    $CONFIG = new HooksConfig(HOOKS_CONFIG);
-    $registered_hooks = new REDCapHookRegistry($CONFIG);
-    $registered_hooks->redcap_data_entry_form(
-        $project_id,
-        $record,
-        $instrument,
-        $event_id,
-        $group_id
-    );
+    $registered_hooks = new REDCapHookRegistry(HOOKS_CONFIG);
+    $params = array($project_id, $record, $instrument, $event_id, $group_id);
+    $registered_hooks->process_hook('redcap_data_entry_form', $project_id,
+                                    $params);
 }
 
 function redcap_save_record($project_id, $record, $instrument, $event_id,
                             $group_id, $survey_hash, $response_id)
 {
-    $CONFIG = new HooksConfig(HOOKS_CONFIG);
-    $registered_hooks = new REDCapHookRegistry($CONFIG);
-    $registered_hooks->redcap_save_record($project_id, $record, $instrument,
-                                          $event_id, $group_id, $survey_hash,
-                                          $response_id);
+    $registered_hooks = new REDCapHookRegistry(HOOKS_CONFIG);
+    $params = array($project_id, $record, $instrument, $event_id, $group_id,
+                    $survey_hash, $response_id);
+    $registered_hooks->process_hook('redcap_save_record', $project_id, $params);
 }
 
 /**
