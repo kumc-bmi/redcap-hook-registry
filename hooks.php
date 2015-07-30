@@ -89,7 +89,9 @@ class REDCapHookRegistry {
     public function process_hook($hook, $project_id, $params) {
         foreach($this->CONFIG[$hook] as $file => $target) {
             list($function, $project_ids) = explode(':', $target);
-            if(in_array($project_id, explode(',', $project_ids))) {
+            if($project_ids == '*' 
+               or in_array($project_id, explode(',', $project_ids))
+            ) {
                 if(is_readable(REDCAP_ROOT.$file)) {
                     require_once(REDCAP_ROOT.$file);
                     call_user_func_array($function, $params);
