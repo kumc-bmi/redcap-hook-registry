@@ -2,12 +2,12 @@
 /**
  * This is to deal with PHP relative path issues resulting from differences in
  * where a script is executed from.  NOTE: There has to be a better to deal with
- * this.
+ * this... but than again... it's PHP :(
  */
 if(defined('APP_PATH_DOCROOT')) { // Executed by REDCap process.
     define('REDCAP_ROOT', realpath(APP_PATH_DOCROOT.'../').'/');
     define('HOOKS_CONFIG', realpath(APP_PATH_DOCROOT.'../hooks/hooks.ini'));
-} else { // For testing from REDCap root directory.
+} else { // For command line testing from within the REDCap root directory.
     define('REDCAP_ROOT', '');
     define('HOOKS_CONFIG', 'hooks/hooks.ini');
 }
@@ -25,11 +25,12 @@ class HooksConfig implements ArrayAccess {
     public function __construct($config_file) {
         if(is_readable($config_file)) {
             $this->container = parse_ini_file($config_file, true);
-        } /* else {
-            ... we should handle this case!
-        } */
+        } else {
+            throw new Exception("Config file not readable at $config_file.");
+        }
     }
 
+    // Do not allow offset to be set, and therefore changed.
     public function offsetSet($index, $value) {
         return;
     }
@@ -38,12 +39,13 @@ class HooksConfig implements ArrayAccess {
         return isset($this->container[$offset]);
     }
 
+    // Do not allow offset to be unset, and therefor changed.
     public function offsetUnset($offset) {
         return;
     }
 
     public function offsetGet($offset) {
-        return isset($this->container[$offset]) ? $this->container[$offset] : null;
+        return $this->offsetExists($offset) ? $this->container[$offset] : null;
     }
 }
 
@@ -54,7 +56,7 @@ class HooksConfig implements ArrayAccess {
  * file.
  *
  * This code relies upon an ini configuration file which defines the hook type,
- * file, function relationship (file path defined above as HOOKS_CONFIG). 
+ * file-function relationship (file path defined above as HOOKS_CONFIG). 
  *
  * Config Example:
  *
@@ -73,10 +75,12 @@ class HooksConfig implements ArrayAccess {
  * Hook implementations that are plugin specific should be placed in a hook file
  * within the <plugin-root> directory.  Hook functions should have the same form
  * as the original REDCap hook function names with the leading 'redcap_'
- * replaced with <project-root>. For example, the 'example' plugin implements 
+ * replaced with <plugin-root>. For example, the 'example' plugin implements 
  * the redcap_save_record hook.  The hook function should be named
  * example_save_record and should be located in
  * <redcap-root>/plugins/<plugin-root>/hooks.php.
+ *
+ * NOTE: An unavoidable limitation is that all hook function be uniquely named.
  */
 class REDCapHookRegistry {
 
@@ -92,15 +96,23 @@ class REDCapHookRegistry {
             if($project_ids == '*' 
                or in_array($project_id, explode(',', $project_ids))
             ) {
-                if(is_readable(REDCAP_ROOT.$file)) {
-                    require_once(REDCAP_ROOT.$file);
-                    call_user_func_array($function, $params);
-                } /* else {
-                    ... this case should be handled!
-                } */
-            } /* else {
-                ... this one too!
-            } */
+                $filepath = REDCAP_ROOT.$file;
+                if(is_readable($filepath)) {
+                    require_once($filepath);
+                    if(function_exists($function)) {
+                        call_user_func_array($function, $params);
+                    } else {
+                        throw new Exception(
+                            "REDCap hook function $function is not defined in"
+                            ."hook file at $filepath."
+                        );
+                    }
+                } else {
+                    throw new Exception(
+                        "REDCap hook file not readable at $filepath."
+                    );
+                }
+            }
         }
     }
 }
