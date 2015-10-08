@@ -9,3 +9,7 @@
 ;This is an example only.
 ;[redcap_save_record]
 ;hooks/projects/example.php= example_save_record:1,2
+
+;Instead of declaring individual project ids a hook implementation can be
+;enabled for all projects using *.
+;hooks/projects/example.php= example_save_record:*

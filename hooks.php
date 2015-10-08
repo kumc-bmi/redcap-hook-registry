@@ -1,16 +1,7 @@
 <?php
-/**
- * This is to deal with PHP relative path issues resulting from differences in
- * where a script is executed from.  NOTE: There has to be a better to deal with
- * this... but than again... it's PHP :(
- */
-if(defined('APP_PATH_DOCROOT')) { // Executed by REDCap process.
-    define('REDCAP_ROOT', realpath(APP_PATH_DOCROOT.'../').'/');
-    define('HOOKS_CONFIG', realpath(APP_PATH_DOCROOT.'../hooks/hooks.ini'));
-} else { // For command line testing from within the REDCap root directory.
-    define('REDCAP_ROOT', '');
-    define('HOOKS_CONFIG', 'hooks/hooks.ini');
-}
+define('REDCAP_ROOT', realpath(dirname(__FILE__).'/../').'/');
+define('HOOKS_CONFIG', REDCAP_ROOT.'hooks/hooks.ini');
+
 
 /**
  * An object for storing REDCapHookRegistry configuration values. The
@@ -55,8 +46,9 @@ class HooksConfig implements ArrayAccess {
  * REDCap hook, to be defined and executed outside of a single, monolithic hook
  * file.
  *
- * This code relies upon an ini configuration file which defines the hook type,
- * file-function relationship (file path defined above as HOOKS_CONFIG). 
+ * This code relies upon an ini configuration file which defines the hook type /
+ * PHP include file path / hook implementation function relationship (file path
+ * defined above as HOOKS_CONFIG). 
  *
  * Config Example:
  *
@@ -80,7 +72,8 @@ class HooksConfig implements ArrayAccess {
  * example_save_record and should be located in
  * <redcap-root>/plugins/<plugin-root>/hooks.php.
  *
- * NOTE: An unavoidable limitation is that all hook function be uniquely named.
+ * NOTE: An unavoidable limitation is that all hook functions must be uniquely
+ * named.
  */
 class REDCapHookRegistry {
 
@@ -90,11 +83,17 @@ class REDCapHookRegistry {
         $this->CONFIG = new HooksConfig($config_path);
     }
 
+    // It explodes, it trims, it... trimsplodes!
+    // NOTE: You can rename this if you want Matt, but I refuse to!
+    private function trimsplode($delimiter, $string) {
+        return str_replace(' ', '', explode($delimiter, $string));
+    }
+
     public function process_hook($hook, $project_id, $params) {
         foreach($this->CONFIG[$hook] as $file => $target) {
-            list($function, $project_ids) = explode(':', $target);
+            list($function, $project_ids) = $this->trimsplode(':', $target);
             if($project_ids == '*' 
-               or in_array($project_id, explode(',', $project_ids))
+               or in_array($project_id, $this->trimsplode(',', $project_ids))
             ) {
                 $filepath = REDCAP_ROOT.$file;
                 if(is_readable($filepath)) {
@@ -117,9 +116,22 @@ class REDCapHookRegistry {
     }
 }
 
+
 /**
  * The actual REDCap hook functions which are called by the REDCap application.
  */
+function redcap_control_center() {
+    $registered_hooks = new REDCapHookRegistry(HOOKS_CONFIG);
+    $registered_hooks->process_hook('redcap_control_center', $project_id,
+                                    array());
+}
+
+function redcap_custom_verify_username($username) {
+    $registered_hooks = new REDCapHookRegistry(HOOKS_CONFIG);
+    $registered_hooks->process_hook('redcap_custom_verify_username',
+                                    $project_id, array($username));
+}
+
 function redcap_data_entry_form($project_id, $record, $instrument, $event_id,
                                 $group_id)
 {
@@ -138,7 +150,28 @@ function redcap_save_record($project_id, $record, $instrument, $event_id,
     $registered_hooks->process_hook('redcap_save_record', $project_id, $params);
 }
 
-/**
- * TODO: Implement remaining REDCap hook functions
- */
+function redcap_survey_complete($project_id, $record, $instrument, $event_id,
+                                $group_id, $survey_hash, $response_id)
+{
+    $registered_hooks = new REDCapHookRegistry(HOOKS_CONFIG);
+    $params = array($project_id, $record, $instrument, $event_id, $group_id,
+                    $survey_hash, $response_id);
+    $registered_hooks->process_hook('redcap_survey_complete', $project_id,
+                                    $params);
+}
+
+function redcap_survey_page($project_id, $record, $instrument, $event_id,
+                            $group_id, $survey_hash, $response_id)
+{
+    $registered_hooks = new REDCapHookRegistry(HOOKS_CONFIG);
+    $params = array($project_id, $record, $instrument, $event_id, $group_id,
+                    $survey_hash, $response_id);
+    $registered_hooks->process_hook('redcap_survey_page', $project_id, $params);
+}
+
+function redcap_user_rights($project_id) {
+    $registered_hooks = new REDCapHookRegistry(HOOKS_CONFIG);
+    $registered_hooks->process_hook('redcap_user_rights', $project_id,
+                                    array($project_id));
+}
 ?>
