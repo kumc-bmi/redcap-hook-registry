@@ -1,5 +1,7 @@
 <?php
+// The absolute path to the root directory of the REDCap installation.
 define('REDCAP_ROOT', realpath(dirname(__FILE__).'/../').'/');
+// The absolute path to the hook registry configuration file.
 define('HOOKS_CONFIG', REDCAP_ROOT.'hooks/hooks.ini');
 
 
