@@ -13,12 +13,10 @@
 This custom REDCap hook registry allows independent functions, which implement
 a given REDCap hook, to be defined and executed outside of a single, monolithic
 hook file.
----
 
 
 ### REQUIREMENTS
 Currently there are no requirements other than REDCap. 
----
 
 ### INSTALLATION
 To install this code:
@@ -57,13 +55,11 @@ and should be located in `<redcap-root>/plugins/<plugin-root>/hooks.php`.
 
 **NOTE:** An unavoidable limitation is that all hook functions must be uniquely
 named.
----
 
 ### VALIDATION
 To validate that the hook registry is working correctly validate that a hook
 implementation, which uses this code works correctly (e.g. the notification
 plugin).
----
 
 ### MAINTAINERS
 Current maintainers:
