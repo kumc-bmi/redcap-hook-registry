@@ -1,5 +1,5 @@
 # REDCap Hook Registry
----
+
  * Introduction
  * Requirements
  * Installation
