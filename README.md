@@ -1,19 +1,9 @@
 # REDCap Hook Registry
 
- * Introduction
- * Requirements
- * Installation
- * Configuration
- * Testing
- * Validation
- * Maintainers
-
-
 ### INTRODUCTION
 This custom REDCap hook registry allows independent functions, which implement
 a given REDCap hook, to be defined and executed outside of a single, monolithic
 hook file.
-
 
 ### REQUIREMENTS
 Currently there are no requirements other than REDCap. 
